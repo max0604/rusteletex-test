@@ -5,9 +5,7 @@
 #include <time.h>
 #include "utils.h"
 
-static void phex(uint8_t* str, int len);
-void generate_key(uint8_t* key, size_t lenth);
-extern int mode; // For runtime mode choose
+extern int mode;
 
 int main(int argc, char* argv[])
 {
@@ -42,43 +40,8 @@ int main(int argc, char* argv[])
         default: printf("Input error: key_lenth must be 128 or 192 or 256 bits (AES standart)\n"); return -1;
     }
 
-    generate_key(key_ptr, key_lenth/8);
-    printf("Key:\n");
-    phex((uint8_t*)key_ptr, key_lenth/8);
-
-    memset(check_ptr, 0, key_lenth/8);
-    memcpy(check_ptr, login, strlen(login));
-
-    //printf("Before encrypt:\n");
-    //phex(check_ptr, key_lenth/8);
-    encrypt_cbc(key_ptr, check_ptr);
-    printf("After encrypt:\n");
-    phex(check_ptr, key_lenth/8);
-    decrypt_cbc(key_ptr, check_ptr);
-    //printf("After decrypt:\n");
-    //phex(check_ptr, key_lenth/8);
-
-    if(0 == memcmp((char*)check_ptr, login, strlen(login))) { printf("Success, login = %s\n", (char*)check_ptr); }
-    else{ printf("Fail, login = %s\n", (char*)check_ptr);  return -1;}
-    return 0;
+    return encrypt_and_decrypt_login_and_passwd(key_ptr, check_ptr, key_lenth/8, login, passwd);
 }
-
-// prints string as hex
-static void phex(uint8_t* str, int len)
-{
-    unsigned char i;
-    for (i = 0; i < len; ++i)
-        printf("%.2x", str[i] & 0xff);
-    printf("\n");
-}
-
-void generate_key(uint8_t* key, size_t lenth)
-{
-    for (size_t i = 0; i < lenth; i++) {
-        key[i] = rand() % 256;
-    }
-}
-
 
 #if 0
 Написать программу на языке Си,

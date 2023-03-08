@@ -229,18 +229,28 @@ void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key)
     if(mode == AES256) {
         Nk = 8;
         Nr = 14;
+        ctx->RoundKey = malloc(AES_keyExpSize256);
     }
     else if(mode == AES192)
     {
         Nk = 6;
         Nr = 12;
+        ctx->RoundKey = malloc(AES_keyExpSize192);
     }
     else {
         Nk = 4;
         Nr = 10;
+        ctx->RoundKey = malloc(AES_keyExpSize128);
     }
     KeyExpansion(ctx->RoundKey, key);
 }
+
+void AES_clear_ctx(struct AES_ctx* ctx)
+{
+    if(ctx->RoundKey)
+        free(ctx->RoundKey);
+}
+
 #if (defined(CBC) && (CBC == 1)) || (defined(CTR) && (CTR == 1))
 void AES_init_ctx_iv(struct AES_ctx* ctx, const uint8_t* key, const uint8_t* iv)
 {
