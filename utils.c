@@ -59,9 +59,8 @@ int encrypt_and_decrypt_login_and_passwd(uint8_t* key_ptr, uint8_t* check_ptr, s
     if(0 == memcmp((char*)check_ptr, login, strlen(login))) { printf("Decrypt Success, login = %s\n\n", (char*)check_ptr); }
     else{ printf("Decrypt Fail, login = %s\n\n", (char*)check_ptr);  return -1;}
 
-
     memset(check_ptr, 0, len);
-    memcpy(check_ptr, passwd, strlen(login));
+    memcpy(check_ptr, passwd, strlen(passwd));
 
     encrypt_cbc(key_ptr, check_ptr);
     printf("Encrypted passwd:\n");
