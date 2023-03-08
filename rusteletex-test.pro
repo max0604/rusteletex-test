@@ -19,7 +19,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 # Input
 SOURCES += main.c \
-    aes.c
+    aes.c \
+    utils.c
 
 HEADERS += \
-    aes.h
+    aes.h \
+    utils.h
