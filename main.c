@@ -7,6 +7,7 @@
 
 static void phex(uint8_t* str, int len);
 void generate_key(uint8_t* key, size_t lenth);
+extern int mode; // For runtime mode choose
 
 int main(int argc, char* argv[])
 {
@@ -17,7 +18,6 @@ int main(int argc, char* argv[])
     char* login = argv[1];
     char* passwd = argv[2];
     int key_lenth = atoi(argv[3]);
-    int mode = 0;
 
     if(strlen(login) > 16 || strlen(passwd) > 16) {
         printf("Input error: login or passwd lenth more than 16 bytes\n"); return -1;
@@ -26,37 +26,40 @@ int main(int argc, char* argv[])
 
     srand(time(NULL));
 
+    uint8_t key16[16];
+    uint8_t key24[24];
+    uint8_t key32[32];
+    uint8_t* key_ptr;
+    uint8_t check16[16];
+    uint8_t check24[24];
+    uint8_t check32[32];
+    uint8_t* check_ptr;
+
     switch (key_lenth) {
-        case 128: { mode = AES128; } break;
-        case 192: { mode = AES192; } break;
-        case 256: { mode = AES256; } break;
+        case 128: { mode = AES128; key_ptr = key16; check_ptr = check16;} break;
+        case 192: { mode = AES192; key_ptr = key24; check_ptr = check24;} break;
+        case 256: { mode = AES256; key_ptr = key32; check_ptr = check32;} break;
         default: printf("Input error: key_lenth must be 128 or 192 or 256 bits (AES standart)\n"); return -1;
     }
 
-    uint8_t key[16];
-    generate_key(key, sizeof(key));
+    generate_key(key_ptr, key_lenth/8);
     printf("Key:\n");
-    phex(key, 16);
+    phex((uint8_t*)key_ptr, key_lenth/8);
 
-    char check[16];
-    memset(check, 0, sizeof(check));
-    memcpy(check, login, strlen(login));
+    memset(check_ptr, 0, key_lenth/8);
+    memcpy(check_ptr, login, strlen(login));
 
-    printf("Before encrypt:\n");
-    phex((uint8_t*)check, 16);
-    encrypt_cbc(mode, key, (uint8_t*)check);
+    //printf("Before encrypt:\n");
+    //phex(check_ptr, key_lenth/8);
+    encrypt_cbc(key_ptr, check_ptr);
     printf("After encrypt:\n");
-    phex((uint8_t*)check, 16);
-    decrypt_cbc(mode, key, (uint8_t*)check);
-    printf("After decrypt:\n");
-    phex((uint8_t*)check, 16);
+    phex(check_ptr, key_lenth/8);
+    decrypt_cbc(key_ptr, check_ptr);
+    //printf("After decrypt:\n");
+    //phex(check_ptr, key_lenth/8);
 
-    if(0 == memcmp((char*)check, login, strlen(login))) { printf("Success, login = %s\n", (char*)check); }
-    else{ printf("Fail, login = %s\n", (char*)check); }
-
-    memset(check, 0, sizeof(check));
-
-
+    if(0 == memcmp((char*)check_ptr, login, strlen(login))) { printf("Success, login = %s\n", (char*)check_ptr); }
+    else{ printf("Fail, login = %s\n", (char*)check_ptr);  return -1;}
     return 0;
 }
 

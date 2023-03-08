@@ -4,6 +4,14 @@
 #include <stdint.h>
 #include <stddef.h>
 
+enum mode {
+    AES256 = 0,
+    AES192 = 1,
+    AES128 = 2
+};
+
+int mode;
+
 // #define the macros below to 1/0 to enable/disable the mode of operation.
 //
 // CBC enables AES encryption in CBC-mode of operation.
@@ -41,6 +49,15 @@
     #define AES_keyExpSize 176
 #endif
 
+enum
+{
+    AES_keyExpSize256 = 240,
+    AES_keyExpSize192 = 208,
+    AES_keyExpSize128 = 176
+};
+
+
+#if 0
 struct AES_ctx
 {
   uint8_t RoundKey[AES_keyExpSize];
@@ -48,11 +65,22 @@ struct AES_ctx
   uint8_t Iv[AES_BLOCKLEN];
 #endif
 };
+#else
+struct AES_ctx
+{
+  uint8_t* RoundKey;
+  size_t RoundKey_size;
+#if (defined(CBC) && (CBC == 1)) || (defined(CTR) && (CTR == 1))
+  uint8_t Iv[AES_BLOCKLEN];
+#endif
+};
+#endif
 
 void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key);
 #if (defined(CBC) && (CBC == 1)) || (defined(CTR) && (CTR == 1))
 void AES_init_ctx_iv(struct AES_ctx* ctx, const uint8_t* key, const uint8_t* iv);
 void AES_ctx_set_iv(struct AES_ctx* ctx, const uint8_t* iv);
+void AES_clear_ctx_iv(struct AES_ctx* ctx);
 #endif
 
 #if defined(ECB) && (ECB == 1)

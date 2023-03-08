@@ -36,6 +36,7 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
 /* Includes:                                                                 */
 /*****************************************************************************/
 #include <string.h> // CBC mode, for memset
+#include <stdlib.h>
 #include "aes.h"
 
 /*****************************************************************************/
@@ -44,6 +45,11 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
 // The number of columns comprising a state in AES. This is a constant in AES. Value=4
 #define Nb 4
 
+extern int mode;
+static unsigned Nk;
+static unsigned Nr;
+
+#if 0
 #if defined(AES256) && (AES256 == 1)
     #define Nk 8
     #define Nr 14
@@ -54,6 +60,7 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
     #define Nk 4        // The number of 32 bit words in a key.
     #define Nr 10       // The number of rounds in AES Cipher.
 #endif
+#endif
 
 // jcallan@github points out that declaring Multiply as a function 
 // reduces code size considerably with the Keil ARM compiler.
@@ -61,8 +68,6 @@ NOTE:   String length must be evenly divisible by 16byte (str_len % 16 == 0)
 #ifndef MULTIPLY_AS_A_FUNCTION
   #define MULTIPLY_AS_A_FUNCTION 0
 #endif
-
-
 
 
 /*****************************************************************************/
@@ -196,18 +201,21 @@ static void KeyExpansion(uint8_t* RoundKey, const uint8_t* Key)
 
       tempa[0] = tempa[0] ^ Rcon[i/Nk];
     }
-#if defined(AES256) && (AES256 == 1)
-    if (i % Nk == 4)
-    {
-      // Function Subword()
-      {
-        tempa[0] = getSBoxValue(tempa[0]);
-        tempa[1] = getSBoxValue(tempa[1]);
-        tempa[2] = getSBoxValue(tempa[2]);
-        tempa[3] = getSBoxValue(tempa[3]);
-      }
+///#if defined(AES256) && (AES256 == 1)
+
+    if (mode == AES256) {
+        if (i % Nk == 4)
+        {
+          // Function Subword()
+          {
+            tempa[0] = getSBoxValue(tempa[0]);
+            tempa[1] = getSBoxValue(tempa[1]);
+            tempa[2] = getSBoxValue(tempa[2]);
+            tempa[3] = getSBoxValue(tempa[3]);
+          }
+        }
     }
-#endif
+///#endif
     j = i * 4; k=(i - Nk) * 4;
     RoundKey[j + 0] = RoundKey[k + 0] ^ tempa[0];
     RoundKey[j + 1] = RoundKey[k + 1] ^ tempa[1];
@@ -218,14 +226,51 @@ static void KeyExpansion(uint8_t* RoundKey, const uint8_t* Key)
 
 void AES_init_ctx(struct AES_ctx* ctx, const uint8_t* key)
 {
-  KeyExpansion(ctx->RoundKey, key);
+    if(mode == AES256) {
+        Nk = 8;
+        Nr = 14;
+    }
+    else if(mode == AES192)
+    {
+        Nk = 6;
+        Nr = 12;
+    }
+    else {
+        Nk = 4;
+        Nr = 10;
+    }
+    KeyExpansion(ctx->RoundKey, key);
 }
 #if (defined(CBC) && (CBC == 1)) || (defined(CTR) && (CTR == 1))
 void AES_init_ctx_iv(struct AES_ctx* ctx, const uint8_t* key, const uint8_t* iv)
 {
-  KeyExpansion(ctx->RoundKey, key);
-  memcpy (ctx->Iv, iv, AES_BLOCKLEN);
+    if(mode == AES256) {
+        Nk = 8;
+        Nr = 14;
+        ctx->RoundKey = malloc(AES_keyExpSize256);
+    }
+    else if(mode == AES192)
+    {
+        Nk = 6;
+        Nr = 12;
+        ctx->RoundKey = malloc(AES_keyExpSize192);
+    }
+    else {
+        Nk = 4;
+        Nr = 10;
+        ctx->RoundKey = malloc(AES_keyExpSize128);
+    }
+
+    KeyExpansion(ctx->RoundKey, key);
+    memcpy (ctx->Iv, iv, AES_BLOCKLEN);
 }
+
+void AES_clear_ctx_iv(struct AES_ctx* ctx)
+{
+    if(ctx->RoundKey)
+        free(ctx->RoundKey);
+}
+
 void AES_ctx_set_iv(struct AES_ctx* ctx, const uint8_t* iv)
 {
   memcpy (ctx->Iv, iv, AES_BLOCKLEN);
