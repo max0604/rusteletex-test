@@ -2,7 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <time.h>
 #include "utils.h"
+
+static void phex(uint8_t* str, int len);
+void generate_key(uint8_t* key, size_t lenth);
 
 int main(int argc, char* argv[])
 {
@@ -18,7 +22,9 @@ int main(int argc, char* argv[])
     if(strlen(login) > 16 || strlen(passwd) > 16) {
         printf("Input error: login or passwd lenth more than 16 bytes\n"); return -1;
     }
-    printf("login = %s, passwd = %s, key_lenth = %d\n", login, passwd, key_lenth);
+    printf("Passed: login = %s, passwd = %s, key_lenth = %d\n", login, passwd, key_lenth);
+
+    srand(time(NULL));
 
     switch (key_lenth) {
         case 128: { mode = AES128; } break;
@@ -27,13 +33,49 @@ int main(int argc, char* argv[])
         default: printf("Input error: key_lenth must be 128 or 192 or 256 bits (AES standart)\n"); return -1;
     }
 
-    uint8_t key[] = { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c };
+    uint8_t key[16];
+    generate_key(key, sizeof(key));
+    printf("Key:\n");
+    phex(key, 16);
 
-    int exit = encrypt_cbc(mode, key) + decrypt_cbc(mode, key);
-    (void)exit;
+    char check[16];
+    memset(check, 0, sizeof(check));
+    memcpy(check, login, strlen(login));
+
+    printf("Before encrypt:\n");
+    phex((uint8_t*)check, 16);
+    encrypt_cbc(mode, key, (uint8_t*)check);
+    printf("After encrypt:\n");
+    phex((uint8_t*)check, 16);
+    decrypt_cbc(mode, key, (uint8_t*)check);
+    printf("After decrypt:\n");
+    phex((uint8_t*)check, 16);
+
+    if(0 == memcmp((char*)check, login, strlen(login))) { printf("Success, login = %s\n", (char*)check); }
+    else{ printf("Fail, login = %s\n", (char*)check); }
+
+    memset(check, 0, sizeof(check));
+
 
     return 0;
 }
+
+// prints string as hex
+static void phex(uint8_t* str, int len)
+{
+    unsigned char i;
+    for (i = 0; i < len; ++i)
+        printf("%.2x", str[i] & 0xff);
+    printf("\n");
+}
+
+void generate_key(uint8_t* key, size_t lenth)
+{
+    for (size_t i = 0; i < lenth; i++) {
+        key[i] = rand() % 256;
+    }
+}
+
 
 #if 0
 Написать программу на языке Си,

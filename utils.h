@@ -9,7 +9,7 @@ enum mode {
     AES128 = 2
 };
 
-int decrypt_cbc(int mode, uint8_t* key);
-int encrypt_cbc(int mode, uint8_t* key);
+int decrypt_cbc(int mode, const uint8_t* key, uint8_t* plain_text);
+int encrypt_cbc(int mode, const uint8_t* key, uint8_t* plain_text);
 
 #endif
