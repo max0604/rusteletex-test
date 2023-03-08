@@ -1,5 +1,7 @@
 # rusteletex-test
 
+Recueried that login and passwd less or equal 16 bytes
+
 Compile: 
 	./make
 
